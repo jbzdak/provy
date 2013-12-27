@@ -12,3 +12,4 @@ provy.egg-info
 .idea/
 setup.cfg
 cover/
+local/**

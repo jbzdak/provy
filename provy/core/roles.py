@@ -16,6 +16,7 @@ import fabric.api
 from jinja2 import Environment, PackageLoader, FileSystemLoader
 import uuid
 from StringIO import StringIO
+from provy.core.errors import CommandExecutionError
 
 
 class UsingRole(object):
@@ -63,6 +64,13 @@ class Role(object):
                 self.execute('ls /home/myuser', sudo=False, stdout=False)
     '''
     def __init__(self, prov, context):
+        """
+        :param prov: Provyfile module.
+        :type prov: Python module object.
+        :param context: Provy context
+        :type context: :class:`dict`
+        """
+
         if 'used_roles' not in context:
             context['used_roles'] = {}
         if 'roles_in_context' not in context:
@@ -271,7 +279,7 @@ class Role(object):
             return fabric.api.sudo(command, user=user)
         return fabric.api.run(command)
 
-    def execute_local(self, command, stdout=True, sudo=False, user=None):
+    def execute_local(self, command, stdout=True, sudo=False, user=None, ok_returncodes = (0, )):
         '''
         Allows you to perform any shell action in the local machine. It is an abstraction over the `fabric.api.local <https://fabric.readthedocs.org/en/latest/api/core/operations.html#fabric.operations.local>`_ method.
 
@@ -283,9 +291,12 @@ class Role(object):
         :type sudo: :class:`bool`
         :param user: If specified, will be the user with which the command will be executed. Defaults to :class:`None`.
         :type user: :class:`str`
+        :param ok_returncodes: List of returncodes that command may return, and that are not treated as an error.
+        :type ok_returncodes: :class:`list` of :clas:`int`.
 
-        :return: The execution result
-        :rtype: :class:`str`
+        :return: The execution result (contents of stdout)
+        :rtype: :class:`str` (a fabric `_AttributeString`, so it has some magic
+            attributes, notably: ``stderr``, ``retcode``, ``failed``.
 
         Example:
         ::
@@ -297,8 +308,17 @@ class Role(object):
                     self.execute_local('ls /', stdout=False, sudo=True)
                     self.execute_local('ls /', stdout=False, user='vip')
         '''
-        with self.__showing_command_output(stdout):
-            return self.__execute_local_command(command, sudo=sudo, user=user)
+        with self.__showing_command_output(stdout), fabric.api.settings(warn_only=True):
+            result =  self.__execute_local_command(command, sudo=sudo, user=user)
+
+        if not result.return_code in ok_returncodes:
+            msg = (
+                "Command '{cmd}' returnd returncode '{ret}' which signifies "
+                "fatal error."
+            )
+            raise CommandExecutionError(msg.format(cmd=command, ret=result.return_code))
+
+        return result
 
     def __execute_local_command(self, command, sudo=False, user=None):
         if user is not None:
