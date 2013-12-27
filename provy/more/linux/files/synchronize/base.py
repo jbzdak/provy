@@ -7,7 +7,7 @@ from provy.core import Role
 __all__ = ['RsyncSynchronize']
 
 
-class BaseSynchronize(Role):
+class BaseSynchronizeRole(Role):
 
     __metaclass__ = abc.ABCMeta
 
@@ -20,7 +20,7 @@ class BaseSynchronize(Role):
         pass
 
     def provision(self):
-        super(BaseSynchronize, self).provision()
+        super(BaseSynchronizeRole, self).provision()
         self._install_synchronize_packages()
 
 class Synchronizer(object):
@@ -42,4 +42,3 @@ class Synchronizer(object):
     def validate(self):
         if os.path.isdir(self.local_path) and not self.recursive:
             raise ValueError("You try to synchronize directory without specyfying recursive parameter.")
-

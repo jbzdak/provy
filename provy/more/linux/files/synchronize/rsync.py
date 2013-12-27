@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from .base import Synchronizer, BaseSynchronize
+from .base import Synchronizer, BaseSynchronizeRole
 
 class RsyncSynchronizer(Synchronizer):
 
@@ -33,7 +33,7 @@ class RsyncSynchronizer(Synchronizer):
         return "{}:{}".format(self.role.context['__provy']['host_string'], self.remote_path)
 
     def _prepare_rsync_command(self):
-        opts = ['-a', '--delete']
+        opts = ['-rl', '--delete']
         if self.debug:
             opts.append('-v')
         opts.extend(self.additional_opts)
@@ -41,7 +41,7 @@ class RsyncSynchronizer(Synchronizer):
 
         return " ".join(command)
 
-class RsyncSynchronize(BaseSynchronize):
+class RsyncSynchronizeRole(BaseSynchronizeRole):
     def synchronize_path(self, local_path, remote_path, recursive=True,
                          debug=False, additional_rsync_opts = tuple()):
 
