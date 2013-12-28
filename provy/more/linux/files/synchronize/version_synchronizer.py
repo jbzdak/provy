@@ -1,11 +1,6 @@
 # -*- coding: utf-8 -*-
 
-
-from hashlib import md5
 import json
-import os
-
-from .base import Synchronizer, BaseSynchronizeRole
 from .local_synchronizer import LocalSynchronizer, BaseLocalSynchronizeRole
 
 class VersionSynchronizer(LocalSynchronizer):
