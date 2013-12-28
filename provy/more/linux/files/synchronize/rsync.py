@@ -34,11 +34,11 @@ class RsyncSynchronizer(Synchronizer):
 
     @property
     def remote_path_with_host(self):
-        remote_host = self.role.context['__provy']['current_server']['address']
+        remote_host = self.role.context['__provy']['current_server'].address
         if self.remote_user:
             remote_user = self.remote_user
         else:
-            remote_user = self.role.context['__provy']['current_server'].get('user', None)
+            remote_user = self.role.context['__provy']['current_server'].username
         if remote_user is not None:
             remote_user += '@'
         return "{}{}:{}".format(remote_user, remote_host, self.remote_path)
