@@ -8,6 +8,9 @@ __all__ = ['RsyncSynchronize']
 
 
 class BaseSynchronizeRole(Role):
+    """
+    Role that does the synchronization.
+    """
 
     __metaclass__ = abc.ABCMeta
 
@@ -24,6 +27,9 @@ class BaseSynchronizeRole(Role):
         self._install_synchronize_packages()
 
 class Synchronizer(object):
+    """
+    Object that does all the work.
+    """
 
     __metaclass__ = abc.ABCMeta
 

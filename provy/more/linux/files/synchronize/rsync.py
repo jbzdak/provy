@@ -3,6 +3,9 @@
 from .base import Synchronizer, BaseSynchronizeRole
 
 class RsyncSynchronizer(Synchronizer):
+    """
+    Plain old rsync synchronizer.
+    """
 
     def __init__(self, role, local_path, remote_path, recursive, debug,
                  additional_opts = None, login_as = None):
@@ -50,6 +53,7 @@ class RsyncSynchronizer(Synchronizer):
         return " ".join(command)
 
 class RsyncSynchronizeRole(BaseSynchronizeRole):
+
     def synchronize_path(self, local_path, remote_path, recursive=True,
                          debug=False, additional_rsync_opts = tuple(), login_as=None):
 
