@@ -19,15 +19,15 @@ from jinja2 import FileSystemLoader, ChoiceLoader
 from .server import ProvyServer
 
 
-def run(provfile_path, server_name, password, extra_options):
+def run(provfile_path, server_group_name, password, extra_options):
     module_name = provyfile_module_from(provfile_path)
     prov = import_module(module_name)
-    servers = get_servers_for(prov, server_name)
+    servers = get_servers_for(prov, server_group_name)
 
     build_prompt_options(servers, extra_options)
 
     for server in servers:
-        provision_server(ProvyServer.from_dict(server_name, server), provfile_path, prov)
+        provision_server(server, provfile_path, prov)
 
 
 def print_header(msg):
@@ -90,42 +90,43 @@ def aggregate_node_options(server, context):
 
 def build_prompt_options(servers, extra_options):
     for server in servers:
-        for option_name, option in server.get('options', {}).iteritems():
+        for option_name, option in server.options.iteritems():
             if isinstance(option, AskFor):
                 if option.key in extra_options:
                     value = extra_options[option.key]
                 else:
                     value = option.get_value(server)
-                server['options'][option_name] = value
+                server.options[option_name] = value
+
+def get_all_servers(prov):
+    if not hasattr(prov, 'servers'):
+        raise ConfigurationError('The servers collection was not found in the provyfile file.')
+
+    servers = getattr(prov, 'servers')
+
+    result = {}
+
+    for group_name, group in servers.items():
+        group_dict = {}
+        result[group_name] = group_dict
+        for server_name, server_dict in group.items():
+            group_dict[server_name] = ProvyServer.from_dict(server_name, group_name, server_dict)
+    return result
 
 
-def get_servers_for(prov, server_name):
-    return get_items(prov, server_name, 'servers', lambda item: isinstance(item, dict) and 'address' in item)
-
-
-def get_items(prov, item_name, item_key, test_func):
-    if not hasattr(prov, item_key):
-        raise ConfigurationError('The %s collection was not found in the provyfile file.' % item_key)
-
-    items = getattr(prov, item_key)
-
-    for item_part in item_name.split('.'):
-        items = items[item_part]
-
-    found_items = []
-    recurse_items(items, test_func, found_items)
-    return found_items
-
-
-def recurse_items(col, test_func, found_items):
-    if not isinstance(col, dict):
-        return
-
-    if test_func(col):
-        found_items.append(col)
+def get_servers_for(prov, server_group_name):
+    server_group_name = server_group_name.strip()
+    all_servers = get_all_servers(prov)
+    result = []
+    if server_group_name == '':
+         for group in all_servers.values():
+             for server in group.values():
+                 result.append(server)
+    elif not '.' in server_group_name:
+         group = all_servers[server_group_name]
+         for server in group.values():
+             result.append(server)
     else:
-        for key, val in col.iteritems():
-            if test_func(val):
-                found_items.append(val)
-            else:
-                recurse_items(val, test_func, found_items)
+        group, server = server_group_name.split('.')
+        result.append([all_servers[group][server]])
+    return result
