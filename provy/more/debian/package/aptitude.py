@@ -325,6 +325,9 @@ class AptitudeRole(Role):
         except SystemExit:
             return False
 
+    def get_architecture(self):
+        return self.execute('dpkg --print-architecture')
+
 
 class PackageNotFound(Exception):
     '''Should be raised when a package doesn't exist.'''
