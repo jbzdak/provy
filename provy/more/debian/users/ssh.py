@@ -87,8 +87,7 @@ class SSHRole(Role):
         """
         path = self.ensure_ssh_dir(user)
         file_path = path + "/known_hosts"
-        self.put_file(known_hosts_file, file_path, owner=user, sudo=True)
-        self.execute("chmod -R og-rwx {}".format(path), sudo=True)
+        self.put_file(known_hosts_file, file_path, sudo=True)
         self.ensure_ssh_dir(user) #as a side effect forces 700 perms
 
     def ensure_ssh_key(self, user, private_key_file):
