@@ -64,13 +64,6 @@ class Role(object):
                 self.execute('ls /home/myuser', sudo=False, stdout=False)
     '''
     def __init__(self, prov, context):
-        """
-        :param prov: Provyfile module.
-        :type prov: Python module object.
-        :param context: Provy context
-        :type context: :class:`dict`
-        """
-
         if 'used_roles' not in context:
             context['used_roles'] = {}
         if 'roles_in_context' not in context:
@@ -235,7 +228,7 @@ class Role(object):
         else:
             yield
 
-    def execute(self, command, stdout=True, sudo=False, user=None, cwd=None):
+    def execute(self, command, stdout=True, sudo=False, user=None, cwd=None, ok_returncodes = (0, )):
         '''
         This method is the bread and butter of provy and is a base for most other methods that interact with remote servers.
 
@@ -256,6 +249,8 @@ class Role(object):
              cd into that directory before executing command. Current path will be
              *unchanged* after the call.
         :type cwd: :class:`str`
+        :param ok_returncodes: List of returncodes that command may return, and that are not treated as an error.
+        :type ok_returncodes: :class:`list` of :clas:`int`.
 
         :return: The execution result
         :rtype: :class:`str`
@@ -270,14 +265,25 @@ class Role(object):
                     self.execute('ls /', stdout=False, sudo=True)
                     self.execute('ls /', stdout=False, user='vip')
         '''
-        with self.__showing_command_output(stdout):
-            with self.__cd(cwd):
-                return self.__execute_command(command, sudo=sudo, user=user)
+        with self.__showing_command_output(stdout),  self.__cd(cwd), fabric.api.settings(warn_only=True):
+            result =  self.__execute_command(command, sudo=sudo, user=user)
+        self.__check_returncodes(command, result, ok_returncodes)
+        return result
 
     def __execute_command(self, command, sudo=False, user=None):
         if sudo or (user is not None):
             return fabric.api.sudo(command, user=user)
         return fabric.api.run(command)
+
+    def __check_returncodes(self, command, result, ok_returncodes):
+        if not result.return_code in ok_returncodes:
+            msg = (
+                "Command '{cmd}' returnd returncode '{ret}' which signifies "
+                "fatal error. Additional information passed to log"
+            )
+            self.log(result)
+            raise CommandExecutionError(msg.format(cmd=command, ret=result.return_code))
+
 
     def execute_local(self, command, stdout=True, sudo=False, user=None, ok_returncodes = (0, )):
         '''
@@ -311,13 +317,7 @@ class Role(object):
         with self.__showing_command_output(stdout), fabric.api.settings(warn_only=True):
             result =  self.__execute_local_command(command, sudo=sudo, user=user)
 
-        if not result.return_code in ok_returncodes:
-            msg = (
-                "Command '{cmd}' returnd returncode '{ret}' which signifies "
-                "fatal error."
-            )
-            raise CommandExecutionError(msg.format(cmd=command, ret=result.return_code))
-
+        self.__check_returncodes(command, result, ok_returncodes)
         return result
 
     def __execute_local_command(self, command, sudo=False, user=None):
