@@ -39,7 +39,6 @@ class GitRole(Role):
                     self.provision_role(GitRole) # does not need to be called if using with block.
         '''
         with self.using(AptitudeRole) as role:
-            role.ensure_up_to_date()
             role.ensure_package_installed('git-core')
 
     def ensure_repository(self, repo, path, owner=None, branch=None, sudo=True):
@@ -78,12 +77,16 @@ class GitRole(Role):
         if owner:
             self.change_path_owner(path, owner)
 
+    def __execite_git_command(self, path, command, sudo, owner):
+        return self.execute(self.__GIT_COMMAND_TEMPLATE.format(path=path, command=command), sudo=sudo, user=owner, stdout=False)
+
     def __checkout_branch(self, branch, path, repo, sudo, owner):
         branch_name = "# On branch %s" % branch
-        if branch and not branch_name in self.execute("git --git-dir=\"%s/.git\" --work-tree=\"%s\" status" % (path, path),
-                                                      sudo=True, stdout=False):
+        status = self.__execite_git_command(path, "status", sudo, owner)
+
+        if branch and not branch_name in status:
             self.log("Repository for %s is not in branch %s ! Switching..." % (repo, branch))
-            self.execute('git --git-dir="%s/.git" --work-tree="%s" checkout %s' % (path, path, branch), sudo=sudo, user=owner)
+            self.__execite_git_command(path, "checkout {}".format(branch), sudo, owner)
             self.log("Repository %s currently in branch %s!" % (repo, branch))
 
     def __clone_repository(self, path, repo, sudo, owner):
@@ -91,3 +94,9 @@ class GitRole(Role):
             self.log("Repository for %s does not exist! Cloning..." % repo)
             self.execute("git clone %s %s" % (repo, path), sudo=sudo, stdout=False, user=owner)
             self.log("Repository %s cloned!" % repo)
+        else:
+            self.log("Repository for %s exists! Fetching..." % repo)
+            self.__execite_git_command(path, "fetch", sudo=sudo, owner=owner)
+
+
+    __GIT_COMMAND_TEMPLATE = 'git --git-dir="{path}/.git" --work-tree="{path}" {cmd}'
