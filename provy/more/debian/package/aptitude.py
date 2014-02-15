@@ -135,6 +135,20 @@ class AptitudeRole(Role):
         self.execute(command, stdout=False, sudo=True)
         return True
 
+    def override_sources_list(self, sources_list_file):
+        close = False
+        if isinstance(sources_list_file, basestring):
+            close = True
+            sources_list_file = open(sources_list_file)
+        tempfile = self.create_remote_temp_file()
+        self.log("Overriding aptitude sources")
+        self.put_file(sources_list_file, to_file=tempfile, stdout=True)
+        self.execute('cat "{}" > /etc/apt/sources.list'.format(tempfile), stdout=False, sudo=True)
+        if close:
+            sources_list_file.close()
+        self.force_update()
+
+
     def __parse_source_string(self, source_string):
         parts = re.split('\s+', source_string, 3)
         return {'type': parts[0], 'uri': parts[1], 'distribution': parts[2], 'components': parts[3]}
