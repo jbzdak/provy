@@ -182,6 +182,7 @@ class Role(object):
                     pass
         '''
         pass
+        pass
 
     def cleanup(self):
         '''
