@@ -189,7 +189,7 @@ class AptitudeRole(Role):
                     with self.using(AptitudeRole) as role:
                         role.store_update_date()
         '''
-        self.execute('echo "%s" > %s' % (datetime.now().strftime(self.time_format), self.update_date_file), stdout=False)
+        self.execute('echo "%s" > %s' % (datetime.now().strftime(self.time_format), self.update_date_file), stdout=False, sudo=True)
 
     def get_last_update_date(self):
         '''
@@ -273,8 +273,7 @@ class AptitudeRole(Role):
                         if role.is_package_installed('nginx'):
                             pass
         '''
-        with settings(warn_only=True):
-            return package_name in self.execute("dpkg -l | egrep 'ii[ ]*%s\\b'" % package_name, stdout=False, sudo=True)
+        return package_name in self.execute("dpkg -l | egrep 'ii[ ]*%s\\b'" % package_name, stdout=False, sudo=True, ok_returncodes=(0,1))
 
     def ensure_package_installed(self, package_name, stdout=False, sudo=True):
         '''
