@@ -40,6 +40,9 @@ class VersionSynchronizer(LocalSynchronizer):
         except (AttributeError, ValueError) as e:
             return True
 
+    def validate(self):
+        return super(LocalSynchronizer, self).validate()
+
 
 class VersionSynchronizeRole(BaseLocalSynchronizeRole):
 
