@@ -44,7 +44,7 @@ class RsyncSynchronizer(Synchronizer):
         return "{}{}:{}".format(remote_user, remote_host, self.remote_path)
 
     def _prepare_rsync_command(self):
-        opts = ['-rl', '--delete', """-e 'ssh -o UserKnownHostsFile=/dev/null,StrictHostKeyChecking=no'"""]
+        opts = ['-rl', '--delete', """-e 'ssh -o UserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no'"""]
         if self.debug:
             opts.append('-v')
         opts.extend(self.additional_opts)
