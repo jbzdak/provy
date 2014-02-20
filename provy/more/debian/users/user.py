@@ -130,11 +130,11 @@ class UserRole(Role):
                 self.execute('groupadd --gid %s %s' % (group_id, group_name), stdout=False, sudo=True)
             self.log("Group %s created!" % group_name)
 
-    def ensure_user_groups(self, username, groups=[]):
+    def ensure_user_groups(self, username, groups):
         for user_group in groups:
             if not self.user_in_group(username, user_group):
                 self.log("User %s should be in group %s! Rectifying that..." % (username, user_group))
-                self.execute('usermod -G %s %s' % (user_group, username), stdout=False, sudo=True)
+                self.execute('adduser %s %s' % (username, user_group), stdout=False, sudo=True)
                 self.log("User %s is in group %s now!" % (username, user_group))
 
     def ensure_user(self, username, identified_by=None, home_folder=None,
